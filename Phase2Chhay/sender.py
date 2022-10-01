@@ -5,7 +5,7 @@
 # ALL PRINT STATEMENTS ARE COMMENTED OUT, IT IS USED TO HELP CHECK OUTPUT
 #========================================================================#
 
-# import socket library
+# import socket library and math for floor function
 from math import floor
 from socket import *
 
@@ -15,14 +15,12 @@ serverPort = 12000
 # creates UDP socket for server
 clientSocket = socket(AF_INET, SOCK_DGRAM)
 
-# gets user input, raw_input is not available in py3
-
 filename = "kitten.bmp"         # assign filename to imagefile path
 with open(filename, "rb") as f: # open the file as a binary type assigned it to f
     image_bytes = f.read()      # image_bytes is assigned the contents of f
     #print(len(image_bytes))
     #print(image_bytes[0:len(image_bytes)])   
-    tot_slice = floor(len(image_bytes)/1024)  # tot_slice retunrs number of packets to be sent
+    tot_slice = floor(len(image_bytes)/1024)  # tot_slice retunrs number of packets to be sent 
     #print(tot_slice)
 
 
