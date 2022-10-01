@@ -1,4 +1,4 @@
-Author @ Keegan Chhay,
+Author @ Keegan Chhay, Ryan White
 EECE Network Design: Protocols and apps
 Phase 2: Implement RDT 1.0 over a reliable UDP channel
 Group member: Renin , Ryan
@@ -47,4 +47,28 @@ Receiver Design: receiver.py *Renin
 
 
 Extra Credit: *Ryan
+
+![image](https://user-images.githubusercontent.com/44981300/193417586-73ba67b3-57e3-4ad7-bc8b-a857d11dde54.png)
+
+I started my design process by importing Python's GUI package tkinter, and importing library that supports file browsing and selection.
+
+![image](https://user-images.githubusercontent.com/44981300/193417636-fd2b316e-4b33-444c-b2c8-3e9764b25e66.png)
+
+After creating the server host name and port number, base GUI characteristics are configured, including the window's title, size, and title label. Line 21 creates the GUI object itself in memory, and Line 25 configures the label to be visually created in the GUI.
+
+![image](https://user-images.githubusercontent.com/44981300/193417818-f2a3d0b0-1f05-4ed5-81de-56cd7b241d8d.png)
+
+Lines 28-29 create and display the button object that, when clicked, will call the SendFile function which prompts the user to select a bmp file to be sent to the receiver.
+
+![image](https://user-images.githubusercontent.com/44981300/193417892-ce3fa17f-e63a-4964-8d97-dfc63846bd19.png)
+
+Now that SendFile has been entered, the user is prompted to select any bmp file in their directory which is returned in the variable directPath. However, since filedialog returns an object known as a textIoWrapper (a buffered text interface to a buffered raw stream), the actual filepath is accessed by invoking directPath.name as seen on line 38. The filename is now ready to be passed to the rest of the sender program.
+
+![image](https://user-images.githubusercontent.com/44981300/193418132-fe70109a-742d-4259-89a5-42fe19aab55c.png)
+
+This label denoting complete file transfer is constructed after the sender code runs, and serves as a visual note of success to the user.
+
+![image](https://user-images.githubusercontent.com/44981300/193418178-b10f13ec-02fd-4adc-9714-d5f03b5cbe17.png)
+
+Line 61 launches the GUI at the conclusion of the script. It notably comes before the client socket closes: if the mainloop method was invoked after the client socket was closed, communication with the receiver side would be impossible.
 
