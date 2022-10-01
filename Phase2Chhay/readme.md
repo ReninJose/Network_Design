@@ -54,14 +54,14 @@ For Receiver.py: *Renin
 
 
 Extra Credit: *Ryan
-1)
-2)
-3)
-4)
-5)
-6)
-7)
-8)
+1) Import Python's GUI package tkinter
+2) Configure base characteristics of GUI: window title, window size, label title, file browsing button construction
+3) Click file upload button to open File Explorer
+4) Select any bmp file in the user's directory
+5) Extract the filename from the textIoWrapper that tkinter's filedialog library returns
+6) Pass this filename as an argument to sender for file transfer to receiver
+7) Carry out sender operations
+8) Create label after sending to notify user of successful transfer
 
 
 Final Part: *CHANGE THIS FOR NEW INSTRUCTIONS
