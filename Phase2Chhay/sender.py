@@ -33,7 +33,7 @@ for slice_index in range(tot_slice + 1): #for each packet
    # print(packet_slice) 
   
  
-    clientSocket.sendto(packet_slice, (serverName, serverPort))  # attach server name, port to message; send into socket
+    clientSocket.sendto(packet_slice, (serverName, 12005))  # attach server name, port to message; send into socket
 
 
 clientSocket.close() #close the socket
