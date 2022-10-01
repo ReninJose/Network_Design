@@ -1,19 +1,32 @@
-# import socket library
-from socket import *
+# Author: Renin Kingsly Jose
+# EECE.4830 Network Design
+# Phase 2
 
-serverPort = 12000
-# create UDP socket
-serverSocket = socket(AF_INET, SOCK_DGRAM)
-# bind socket to local port number 12000
-serverSocket.bind(('', serverPort))
-print('The server is ready to receive')
+# Receiver.py
 
-# loop forever until terminated
+import socket
+
+local_port = 12005
+buffer_size = 1024 #bytes
+
+r_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+r_socket.bind(('', local_port))
+r_socket.settimeout(3)                  # Timeout for socket.recvfrom(); Can be modified (in sec) 
+
+image = []                              # A list to store bytes of data in each index
+
+# Read data
 while True:
-    # Read from UDP socket into message, getting client's address (client IP and port)
-    message, clientAddress = serverSocket.recvfrom(2048)
+    try:
+        incoming_packet, sender_addr = r_socket.recvfrom(buffer_size)
+        image.append(incoming_packet)
+    except:
+        break
 
-    print(message)
-    
-    # send back message string unmodified back to this client
-   # serverSocket.sendto(modifiedMessage.encode(), clientAddress)
+rawData = b''.join(image)               # Extracting data
+
+f = open("output.bmp", "wb")
+f.write(rawData)                        # Writing Raw data to output.bmp
+f.close()
+
+r_socket.close()                        # Close UDP connection
