@@ -43,12 +43,19 @@ https://studentuml-my.sharepoint.com/:i:/r/personal/keegan_chhay_student_uml_edu
 
 Receiver Design: receiver.py *Renin
 - Import python's socket libraries
+![image](https://user-images.githubusercontent.com/44981300/193434552-72100c45-1a00-41ed-937a-417ae1efc9a3.png)
 - Create/Setup UDP connection
+![image](https://user-images.githubusercontent.com/44981300/193434563-747a9ac7-21a4-47c1-bcd9-da8e6430d3ab.png)
 - Configurable timeout for receiving data
+![image](https://user-images.githubusercontent.com/44981300/193434574-db10b39c-f55e-4da9-9be6-4545950930fd.png)
 - Read in packets by packets from the sender and store it in a list
+![image](https://user-images.githubusercontent.com/44981300/193434610-68d5df20-0427-4fd1-b9d6-2b02390d659f.png)
 - Extract all data from the list and join them
+![image](https://user-images.githubusercontent.com/44981300/193434616-7801c839-e08e-437c-85ed-f6bb10e1479d.png)
 - Write the complete raw data to "output.bmp"
+![image](https://user-images.githubusercontent.com/44981300/193434621-b9a7cd5a-0926-4431-8700-c25dde92f255.png)
 - Close socket
+![image](https://user-images.githubusercontent.com/44981300/193434625-942dc6c0-49bf-4046-bf3c-273068b36f13.png)
 
 Extra Credit: *Ryan
 
