@@ -97,3 +97,13 @@ This label denoting complete file transfer is constructed after the sender code 
 
 Line 61 launches the GUI at the conclusion of the script. It notably comes before the client socket closes: if the mainloop method was invoked after the client socket was closed, communication with the receiver side would be impossible.
 
+Code Execution
+
+![image](https://user-images.githubusercontent.com/44981300/193434719-808f3163-ef2b-4133-996f-8f146cf57b62.png)
+
+![image](https://user-images.githubusercontent.com/44981300/193434734-30a5de82-29a4-4007-a8ca-3d1fd39a851c.png)
+
+![image](https://user-images.githubusercontent.com/44981300/193434738-f6220cda-58cc-43fa-880f-40effa9b9bbd.png)
+
+![image](https://user-images.githubusercontent.com/44981300/193434751-52919d26-44b4-4e34-9c8e-6ea975589e55.png)
+
