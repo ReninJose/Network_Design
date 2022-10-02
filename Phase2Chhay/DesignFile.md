@@ -1,7 +1,7 @@
-Author @ Keegan Chhay, Ryan White
+Author @ Keegan Chhay, Ryan White, Renin Kingsly Jose
+Group member: Renin Kingsly Jose, Ryan White
 EECE Network Design: Protocols and apps
 Phase 2: Implement RDT 1.0 over a reliable UDP channel
-Group member: Renin , Ryan
 
 The purpose of this assignment is to transfer a BMP File between a UDP client socket (sender)
 and a UDP server (receiver). Doing so by RDT 1.0 protocol.
@@ -42,9 +42,13 @@ https://studentuml-my.sharepoint.com/:i:/r/personal/keegan_chhay_student_uml_edu
 -closes the socket
 
 Receiver Design: receiver.py *Renin
-
-
-
+- Import python's socket libraries
+- Create/Setup UDP connection
+- Configurable timeout for receiving data
+- Read in packets by packets from the sender and store it in a list
+- Extract all data from the list and join them
+- Write the complete raw data to "output.bmp"
+- Close socket
 
 Extra Credit: *Ryan
 
