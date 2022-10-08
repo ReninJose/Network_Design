@@ -13,24 +13,6 @@ from socket import *
 from tkinter import *
 from tkinter import filedialog
 
-# configure server and port name
-serverName = gethostname()
-serverPort = 12000
-
-# Configure base gui characteristics: window title, size, label
-root = Tk()
-root.title('Project Phase 2')
-root.geometry('200x200')
-titleLabel = Label(root, text = "Network Design Phase 2", font="Verdana")
-titleLabel.pack()
-
-# Create button to allow user to upload any bmp file given a path
-uploadButton = Button(root, text='Choose File for Upload', command = lambda:SendFile())
-uploadButton.pack()
-
-# creates UDP socket for server
-clientSocket = socket(AF_INET, SOCK_DGRAM)
-
 def SendFile():
 
     # Get textiowrapper of path and extract name for the path to the filename
@@ -57,6 +39,26 @@ def SendFile():
     # Inform user of successful file transfer
     completed = Label(root, text = "Upload complete!", font="Verdana")
     completed.pack()
+
+# configure server and port name
+serverName = gethostname()
+serverPort = 12000
+
+# Configure base gui characteristics: window title, size, label
+root = Tk()
+root.title('Project Phase 2')
+root.geometry('200x200')
+titleLabel = Label(root, text = "Network Design Phase 2", font="Verdana")
+titleLabel.pack()
+
+# Create button to allow user to upload any bmp file given a path
+uploadButton = Button(root, text='Choose File for Upload', command = lambda:SendFile())
+uploadButton.pack()
+
+# creates UDP socket for server
+clientSocket = socket(AF_INET, SOCK_DGRAM)
+
+SendFile()
 
 root.mainloop()
 clientSocket.close() #close the socket

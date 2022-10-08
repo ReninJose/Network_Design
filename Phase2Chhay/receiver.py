@@ -11,7 +11,7 @@ buffer_size = 1024 #bytes
 
 r_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 r_socket.bind(('', local_port))
-r_socket.settimeout(3)                  # Timeout for socket.recvfrom(); Can be modified (in sec) 
+r_socket.settimeout(7)                  # Timeout for socket.recvfrom(); Can be modified (in sec) 
 
 image = []                              # A list to store bytes of data in each index
 
