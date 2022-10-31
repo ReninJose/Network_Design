@@ -1,6 +1,6 @@
 #Author @ Keegan Chhay (file send / socket functionality), Ryan White (gui support)
 #EECE Network Design: Protocols and apps
-#Phase 2: Implement RDT 1.0 over a reliable UDP channel
+#Phase 3: Implement RDT 2.2 over a reliable UDP channel
 #========================================================================#
 # ALL PRINT STATEMENTS ARE COMMENTED OUT, IT IS USED TO HELP CHECK OUTPUT
 #========================================================================#
@@ -102,16 +102,17 @@ def MakePayloads():
 
 
 def MakePkt(seqNum, data, check):
-    bin()
-    udt_packet = ()
-
+    binheader = struct.pack("HH", seqNum, check)
+    udt_packet = binheader + data
+    
+    return udt_packet
 def SendFile():  
     
     ## SendPkt = MakePkt(0 ,checksum)
     completedata = MakePkt()
     for seq,slice in enumerate(completedata):
-        check = checksum(slice)    
-        packet = MakePkt(seq,slice,check)
+        payload_checksum = binary_simple_checksum(slice)    
+        packet = MakePkt(seq,slice,payload_checksum)
         clientSocket.sendto(packet, (serverName, 12005))  # attach server name, port to message; send into socket
    
      # Inform user of successful file transfer
