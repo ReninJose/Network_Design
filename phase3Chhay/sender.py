@@ -13,9 +13,15 @@ import struct
 from tkinter import *
 from tkinter import filedialog
 
+def MakePkt(seqNum, data, check):
+    
+    binheader = struct.pack(seqNum, check)
+    udt_packet = binheader + data
 
+    return udt_packet
 
 def binary_simple_checksum(data):
+
     """Data is a byte object. Returns 1 byte checksum"""
     cs_max = 0xffffffff # 32 bits
     sum = cs_max
@@ -24,42 +30,47 @@ def binary_simple_checksum(data):
         sum += val
         sum <<= val
         sum %= (cs_max)
+
     return sum
 
-#checksum for data
-def checksum(data):
+def MakePayloads():
+    
+    # Get textiowrapper of path and extract name for the path to the filename
+    directPath = filedialog.askopenfile(mode='r', filetypes=[('Image Files', '*jpeg')])
+    filename = directPath.name
+    seq_num = 0
 
-    chk = ''
-    chk_list = []
+    with open(filename, "rb") as f:                         # open the file as a binary type assigned it to f
+        image_bytes = f.read()                              # image_bytes is assigned the contents of f
+        #print(len(image_bytes))
+        #print(image_bytes[0:len(image_bytes)])   
+        tot_slice = floor(len(image_bytes)/1024)            # tot_slice returns number of packets to be sent 
+        #print(tot_slice)
+        
+    for slice_index in range(tot_slice + 1):         
+        #print(slice_index)                                 # used to check the slice index in the output
+        x = slice_index                                     # determining the index for contents of the packet
+        starting_index = x * 1024
+        stop_index = starting_index + 1024
+        packet_slice = (image_bytes[starting_index:stop_index])
+        clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
+        message, receiver_addr = clientSocket.recvfrom(2048)           
 
-    s1 = data[0:8]
-    s2 = data[8:16]
+        while(message != 0):
+            # Resend data
+            clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
+            message, receiver_addr = clientSocket.recvfrom(2048)
 
-    sum = bin(int(s1,2)+int(s2,2))[2:]
-
-    if(len(sum) > 8):
-        chk = sum[1:]
-        chk = bin(int(chk,2)+int(sum[0],2))[2:]
-        if(len(chk) < 8):
-            while(len(chk) != 8):
-               chk = '0' + chk 
-    else:
-        chk = sum
-
-    chk_list[:0] = chk                  # Convert string to list
-
-    for i in range(0, len(chk_list)):
-        if(chk_list[i] == "0"):
-            chk_list[i] = "1"
-        elif(chk_list[i] == "1"):
-            chk_list[i] = "0"
-
-    return ''.join(chk_list)
-
+        seq_num += 1
 
 # configure server and port name
 serverName = gethostname()
-serverPort = 12005
+serverPort = 12000
+addr = (serverName, serverPort) 
+
+# creates UDP socket for server
+clientSocket = socket(AF_INET, SOCK_DGRAM)
+clientSocket.bind(addr)
 
 # Configure base gui characteristics: window title, size, label
 root = Tk()
@@ -69,55 +80,8 @@ titleLabel = Label(root, text = "Network Design Phase 2", font="Verdana")
 titleLabel.pack()
 
 # Create button to allow user to upload any bmp file given a path
-uploadButton = Button(root, text='Choose File for Upload', command = lambda:SendFile())
+uploadButton = Button(root, text='Choose File for Upload', command = lambda:MakePayloads())
 uploadButton.pack()
-
-# creates UDP socket for server
-clientSocket = socket(AF_INET, SOCK_DGRAM)
-
-def MakePayloads():
-    
-    # Get textiowrapper of path and extract name for the path to the filename
-    directPath = filedialog.askopenfile(mode='r', filetypes=[('Image Files', '*jpeg')])
-    filename = directPath.name
-    packetdata = []
-    with open(filename, "rb") as f: # open the file as a binary type assigned it to f
-        image_bytes = f.read()      # image_bytes is assigned the contents of f
-        #print(len(image_bytes))
-        #print(image_bytes[0:len(image_bytes)])   
-        tot_slice = floor(len(image_bytes)/1024)  # tot_slice retunrs number of packets to be sent 
-        #print(tot_slice)
-        
-    for slice_index in range(tot_slice + 1): #for each packet    
-        #print(slice_index) # used to check the slice index in the output
-        x = slice_index           # determining the index for contents of the packet
-        starting_index = x * 1024
-        stop_index = starting_index + 1024
-        packet_slice = (image_bytes[starting_index:stop_index])
-        packetdata.append(packet_slice)
-        # print(packet_slice) 
-
-    
-    return packetdata
-
-
-def MakePkt(seqNum, data, check):
-    binheader = struct.pack("HH", seqNum, check)
-    udt_packet = binheader + data
-    
-    return udt_packet
-def SendFile():  
-    
-    ## SendPkt = MakePkt(0 ,checksum)
-    completedata = MakePkt()
-    for seq,slice in enumerate(completedata):
-        payload_checksum = binary_simple_checksum(slice)    
-        packet = MakePkt(seq,slice,payload_checksum)
-        clientSocket.sendto(packet, (serverName, 12005))  # attach server name, port to message; send into socket
-   
-     # Inform user of successful file transfer
-    completed = Label(root, text = "Upload complete!", font="Verdana")
-    completed.pack()
 
 root.mainloop()
 clientSocket.close() #close the socket
