@@ -9,16 +9,17 @@
 from math import floor
 from socket import *
 import struct
+import time
+
 # import gui module and file browsing library
 from tkinter import *
 from tkinter import filedialog
 
 def MakePkt(seqNum, data, check):
-    
-    binheader = struct.pack(seqNum, check)
-    udt_packet = binheader + data
 
-    return udt_packet
+    format = "II" + str(1024) + "s"
+    packedData = struct.pack(format, check, seqNum, data)
+    return packedData
 
 def binary_simple_checksum(data):
 
@@ -34,9 +35,9 @@ def binary_simple_checksum(data):
     return sum
 
 def MakePayloads():
-    
+
     # Get textiowrapper of path and extract name for the path to the filename
-    directPath = filedialog.askopenfile(mode='r', filetypes=[('Image Files', '*jpeg')])
+    directPath = filedialog.askopenfile(mode='r', filetypes=[('Image Files', '*jpg')])
     filename = directPath.name
     seq_num = 0
 
@@ -54,12 +55,17 @@ def MakePayloads():
         stop_index = starting_index + 1024
         packet_slice = (image_bytes[starting_index:stop_index])
         clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
-        message, receiver_addr = clientSocket.recvfrom(2048)           
+        ack, receiver_addr = clientSocket.recvfrom(2048)
 
-        while(message != 0):
+        while(ack != b'00000000' and ack != b'11111111'):
+            # ack corrupted, resend packet      
+            clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
+            ack, receiver_addr = clientSocket.recvfrom(2048)
+
+        while(ack == b'11111111'):
             # Resend data
             clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
-            message, receiver_addr = clientSocket.recvfrom(2048)
+            ack, receiver_addr = clientSocket.recvfrom(2048)
 
         seq_num += 1
 
@@ -79,9 +85,13 @@ root.geometry('200x200')
 titleLabel = Label(root, text = "Network Design Phase 2", font="Verdana")
 titleLabel.pack()
 
+start_time = time.time()
+
 # Create button to allow user to upload any bmp file given a path
 uploadButton = Button(root, text='Choose File for Upload', command = lambda:MakePayloads())
 uploadButton.pack()
 
+print(start_time - time.time())
+
 root.mainloop()
-clientSocket.close() #close the socket
+clientSocket.close()        #close the socket

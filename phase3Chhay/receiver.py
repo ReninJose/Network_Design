@@ -4,64 +4,111 @@
 
 # Receiver.py
 
+from math import floor
+from queue import Empty
+import random
 import socket
+import struct
 
-def checksum(data):
+# for command line arg
+import sys
 
-    chk = ''
-    chk_list = []
+def CorruptPackets(packet, percentage):
 
-    s1 = data[0:8]
-    s2 = data[8:16]
+    #n = floor(percentage * len(packetList))
+    #packetsToCorrupt = (random.sample(packetList, n))
+    #corruptedByte = '\x00' + os.urandom(4) + '\x00'
+    #print(corruptedByte)
+    #return corruptedByte
 
-    sum = bin(int(s1,2)+int(s2,2))[2:]
+    corruptedPacketList = list(packet)
+    print(corruptedPacketList)
 
-    if(len(sum) > 8):
-        chk = sum[1:]
-        chk = bin(int(chk,2)+int(sum[0],2))[2:]
-        if(len(chk) < 8):
-            while(len(chk) != 8):
-               chk = '0' + chk 
-    else:
-        chk = sum
+    for i in range(len(corruptedPacketList) * percentage):
+        if (corruptedPacketList[i] == 0):
+            corruptedPacketList[i] = 1
+        elif corruptedPacketList[i] == 1:
+            corruptedPacketList[i] = 0
 
-    chk_list[:0] = chk                  # Convert string to list
+    corruptedPacket = ''.join(corruptedPacketList)
+    corruptedPacket = corruptedPacket.encode('UTF-8')
 
-    for i in range(0, len(chk_list)):
-        if(chk_list[i] == "0"):
-            chk_list[i] = "1"
-        elif(chk_list[i] == "1"):
-            chk_list[i] = "0"
+    return corruptedPacket
 
-    return ''.join(chk_list)
+def binary_simple_checksum(data):
+
+    """Data is a byte object. Returns 1 byte checksum"""
+    cs_max = 0xffffffff # 32 bits
+    sum = cs_max
+    for i in range(len(data)):
+        val = data[i]
+        sum += val
+        sum <<= val
+        sum %= (cs_max)
+
+    return sum
 
 local_port = 12005
-buffer_size = 1024 #bytes
+buffer_size = 2048 #bytes
 
 r_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 r_socket.bind(('', local_port))
-r_socket.settimeout(7)                  # Timeout for socket.recvfrom(); Can be modified (in sec) 
+r_socket.settimeout(10)                                                         # Timeout for socket.recvfrom(); Can be modified (in sec) 
+
+option = int(sys.argv[1])
+percentage = int(sys.argv[2])
 
 image = []
+buffer = []
 
 # Read data
 while True:
     try:
-        incoming_packet, sender_addr = r_socket.recvfrom(buffer_size)   #incoming_packet = (chksum, sq_num, raw_data)
+        incoming_packet, sender_addr = r_socket.recvfrom(buffer_size)           #incoming_packet = (chksum, sq_num, raw_data)
+        chksum, sq_num, raw_data = struct.unpack("II1024s", incoming_packet)
+        
+        
+
+
+        if(option == 3):
+            # Data packet bit corruption
+            raw_data = CorruptPackets(raw_data, percentage)
+            print("Raw data corrupted")
+        
         # raw_data corruption identifier
-        if(incoming_packet[0] != checksum(incoming_packet[2])):
+        print(chksum) 
+        print(binary_simple_checksum(raw_data))
+
+        if(chksum != binary_simple_checksum(raw_data)):
             # Send a n-ack to sender
-            r_socket.sendto(1, sender_addr)
+            print("Negative ack: Bit error detected")
+
+            if(option == 2):
+                ack = CorruptPackets(b'11111111', percentage)
+                print("Ack corrupted")
+            else:
+                ack = b'11111111'
+
+            r_socket.sendto(ack, sender_addr)
         else:
             # Send an ack to sender
-            r_socket.sendto(0, sender_addr)
-            image.append(incoming_packet[2])
-    except:
-        print("Error: Timeout or packet parsing failed")
+            print("Positive ack")
+
+            if(option == 2):
+                ack = CorruptPackets(b'00000000', percentage)
+                print("Ack corrupted")
+            else:
+                ack = b'00000000'
+
+            r_socket.sendto(ack , sender_addr)
+            image.append(raw_data)
+
+    except Exception as e:
+        print(e.args)
         break
 
 rawData = b''.join(image)               # Extracting data
-file = open("output.bmp", "wb")
+file = open("output.jpg", "wb")
 file.write(rawData)                     # Writing Raw data to output.bmp
 file.close()
 
