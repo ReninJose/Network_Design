@@ -17,9 +17,6 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
 
-start_time = time.time()
-print(start_time)
-
 # Configure base gui characteristics: window title, size, label
 root = Tk()
 root.title('Project Phase 3')
@@ -58,6 +55,9 @@ def MakePayloads():
     directPath = filedialog.askopenfile(mode='r', filetypes=[('Image Files', '*jpg')])
     filename = directPath.name
     seq_num = 0
+    
+    start_time = time.time()
+    print(start_time)
 
     with open(filename, "rb") as f:                         # open the file as a binary type assigned it to f
         image_bytes = f.read()                              # image_bytes is assigned the contents of f
