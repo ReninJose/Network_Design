@@ -10,10 +10,28 @@ from math import floor
 from socket import *
 import struct
 import time
+from time import struct_time
 
 # import gui module and file browsing library
 from tkinter import *
 from tkinter import filedialog
+from tkinter import ttk
+
+start_time = time.time()
+print(start_time)
+
+# Configure base gui characteristics: window title, size, label
+root = Tk()
+root.title('Project Phase 3')
+titleLabel = Label(root, text = "Network Design Phase 3", font="Verdana")
+titleLabel.pack()
+
+# Create button to allow user to upload any bmp file given a path
+uploadButton = Button(root, text='Choose File for Upload', command = lambda:MakePayloads())
+uploadButton.pack()
+
+progressbar = ttk.Progressbar(root, orient='horizontal', mode='determinate', length=100)
+progressbar.pack()
 
 def MakePkt(seqNum, data, check):
 
@@ -68,6 +86,12 @@ def MakePayloads():
             ack, receiver_addr = clientSocket.recvfrom(2048)
 
         seq_num += 1
+        progressbar['value'] += 1.5873
+        if (seq_num == 63):
+            endTime = time.time()
+            print(endTime - start_time)
+            uploadLabel = Label(root,text='Upload complete!',font="Verdana")
+            uploadLabel.pack()
 
 # configure server and port name
 serverName = gethostname()
@@ -77,21 +101,6 @@ addr = (serverName, serverPort)
 # creates UDP socket for server
 clientSocket = socket(AF_INET, SOCK_DGRAM)
 clientSocket.bind(addr)
-
-# Configure base gui characteristics: window title, size, label
-root = Tk()
-root.title('Project Phase 2')
-root.geometry('200x200')
-titleLabel = Label(root, text = "Network Design Phase 2", font="Verdana")
-titleLabel.pack()
-
-start_time = time.time()
-
-# Create button to allow user to upload any bmp file given a path
-uploadButton = Button(root, text='Choose File for Upload', command = lambda:MakePayloads())
-uploadButton.pack()
-
-print(start_time - time.time())
 
 root.mainloop()
 clientSocket.close()        #close the socket

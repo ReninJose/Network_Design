@@ -49,6 +49,7 @@ def CorruptACK(packet, percentage):
     try:
         # corrupt ack at selected frequency
         if (random.random() < percentage):
+            print(random.random())
             print("Ack corrupted")
             packet = ''.join('1' if x == '0' else '0' for x in packet)
             packet = bytes(packet.encode())
@@ -82,7 +83,7 @@ r_socket.bind(('', local_port))
 r_socket.settimeout(10)                                                         # Timeout for socket.recvfrom(); Can be modified (in sec) 
 
 option = int(sys.argv[1])
-percentage = int(sys.argv[2])
+percentage = int(sys.argv[2]) / 100
 
 image = []
 buffer = []
@@ -92,7 +93,7 @@ while True:
     try:
         incoming_packet, sender_addr = r_socket.recvfrom(buffer_size)           #incoming_packet = (chksum, sq_num, raw_data)
         chksum, sq_num, raw_data = struct.unpack("II1024s", incoming_packet)
-        
+        print(sq_num)
         
 
 
