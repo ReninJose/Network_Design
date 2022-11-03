@@ -13,27 +13,53 @@ import struct
 # for command line arg
 import sys
 
-def CorruptPackets(packet, percentage):
+def CorruptRawData(packet, percentage):
 
-    #n = floor(percentage * len(packetList))
-    #packetsToCorrupt = (random.sample(packetList, n))
-    #corruptedByte = '\x00' + os.urandom(4) + '\x00'
-    #print(corruptedByte)
-    #return corruptedByte
+    try:
+        # enter if packet is randomly selected to be corrupted
+        if (random.random() < percentage):
+            print("Raw data corrupted")
+            print(type(packet))
+            packetString = str(packet)
+            packetList = list(packetString)
 
-    corruptedPacketList = list(packet)
-    print(corruptedPacketList)
+            # revise? corrupts 
+            for i in range(len(packetList)):
+                if (packetList[i].isalpha() and packetList[i] != 'b'):
+                    packetList[i] = 'a'
+            
+            for i in range(len(packetList)):
+                if (packetList[i] == '\\'):
+                    packetList[i] == ''
+            # add jpeg header
+            packetList[:2] = '\\xff\\xd8'
+            corruptedPacket = ''.join(packetList)
+            corruptedPacket = bytes(corruptedPacket.encode())
+            print(type(corruptedPacket))
+            return corruptedPacket
+        else:
+            # no changes: don't corrupt packet
+            return packet
+    except Exception as e:
+        print("Raw data corrupt throwing")
+        print(e)
+        return -1
 
-    for i in range(len(corruptedPacketList) * percentage):
-        if (corruptedPacketList[i] == 0):
-            corruptedPacketList[i] = 1
-        elif corruptedPacketList[i] == 1:
-            corruptedPacketList[i] = 0
-
-    corruptedPacket = ''.join(corruptedPacketList)
-    corruptedPacket = corruptedPacket.encode('UTF-8')
-
-    return corruptedPacket
+def CorruptACK(packet, percentage):
+    try:
+        # corrupt ack at selected frequency
+        if (random.random() < percentage):
+            print("Ack corrupted")
+            packet = ''.join('1' if x == '0' else '0' for x in packet)
+            packet = bytes(packet.encode())
+            print(type(packet))
+            return packet
+        else:
+            print(type(packet))
+            return packet
+    except Exception as e:
+        print("ACK corrupt throwing")
+        print(e)
 
 def binary_simple_checksum(data):
 
@@ -72,8 +98,7 @@ while True:
 
         if(option == 3):
             # Data packet bit corruption
-            raw_data = CorruptPackets(raw_data, percentage)
-            print("Raw data corrupted")
+            raw_data = CorruptRawData(raw_data, percentage)
         
         # raw_data corruption identifier
         print(chksum) 
@@ -84,23 +109,23 @@ while True:
             print("Negative ack: Bit error detected")
 
             if(option == 2):
-                ack = CorruptPackets(b'11111111', percentage)
-                print("Ack corrupted")
+                ack = CorruptACK(b'11111111', percentage)
             else:
                 ack = b'11111111'
 
             r_socket.sendto(ack, sender_addr)
+            #r_socket.sendto(ack, sq_num, sender_addr)
         else:
             # Send an ack to sender
             print("Positive ack")
 
             if(option == 2):
-                ack = CorruptPackets(b'00000000', percentage)
-                print("Ack corrupted")
+                ack = CorruptACK(b'00000000', percentage)
             else:
                 ack = b'00000000'
 
-            r_socket.sendto(ack , sender_addr)
+            r_socket.sendto(ack, sender_addr)
+            #r_socket.sendto(ack, sq_num, sender_addr)
             image.append(raw_data)
 
     except Exception as e:
