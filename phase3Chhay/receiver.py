@@ -51,8 +51,9 @@ def CorruptACK(packet, percentage):
         if (random.random() < percentage):
             print(random.random())
             print("Ack corrupted")
-            packet = ''.join('1' if x == '0' else '0' for x in packet)
-            packet = bytes(packet.encode())
+            #packet = ''.join('1' if x == '0' else '0' for x in packet)
+            packet = b'01010101'
+            #packet = bytes(packet.encode())
             print(type(packet))
             return packet
         else:
