@@ -1,6 +1,6 @@
 #Author @ Keegan Chhay (file send / socket functionality), Ryan White (gui support)
 #EECE Network Design: Protocols and apps
-#Phase 3: Implement RDT 2.2 over a reliable UDP channel
+#Phase 4: Implement RDT 3.0 over a unreliable UDP channel with bit-errors and loss
 #========================================================================#
 # ALL PRINT STATEMENTS ARE COMMENTED OUT, IT IS USED TO HELP CHECK OUTPUT
 #========================================================================#
@@ -19,12 +19,12 @@ from tkinter import ttk
 import sys
 import random
 
-percentage = int(sys.argv[1]) / 100
+#percentage = int(sys.argv[1]) / 100
 
 # Configure base gui characteristics: window title, size, label
 root = Tk()
-root.title('Project Phase 3')
-titleLabel = Label(root, text = "Network Design Phase 3", font="Verdana")
+root.title('Project Phase 4')
+titleLabel = Label(root, text = "Network Design Phase 4", font="Verdana")
 titleLabel.pack()
 
 # Create button to allow user to upload any bmp file given a path
@@ -34,22 +34,22 @@ uploadButton.pack()
 progressbar = ttk.Progressbar(root, orient='horizontal', mode='determinate', length=100)
 progressbar.pack()
 
-def CorruptSenderACK(packet):
-    try:
-        # corrupt ack at selected frequency
-        if (random.random() < percentage):
-            print(random.random())
-            print("Ack corrupted")
-            packet = ''.join('1' if x == '0' else '0' for x in packet)
-            packet = bytes(packet.encode())
-            print(type(packet))
-            return packet
-        else:
-            print(type(packet))
-            return packet
-    except Exception as e:
-        print("ACK corrupt throwing")
-        print(e)
+# def CorruptSenderACK(packet):
+#     try:
+#         # corrupt ack at selected frequency
+#         if (random.random() < percentage):
+#             print(random.random())
+#             print("Ack corrupted")
+#             packet = ''.join('1' if x == '0' else '0' for x in packet)
+#             packet = bytes(packet.encode())
+#             print(type(packet))
+#             return packet
+#         else:
+#             print(type(packet))
+#             return packet
+#     except Exception as e:
+#         print("ACK corrupt throwing")
+#         print(e)
 
 def MakePkt(seqNum, data, check):
 
@@ -94,31 +94,37 @@ def MakePayloads():
         stop_index = starting_index + 1024
         packet_slice = (image_bytes[starting_index:stop_index])
         clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
-        ack, receiver_addr = clientSocket.recvfrom(2048)
-
-        ack = CorruptSenderACK(ack)
         
-        if ((time.time() - start_time) >= 0.50):
-            # timeout, resend packet
-            clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
+        while(True):
+            try:
+                ack, receiver_addr = clientSocket.recvfrom(2048)
+                while(ack != b'00000000' and ack != b'11111111'):
+                    # ack corrupted, resend packet      
+                    clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), receiver_addr)
+                    ack, receiver_addr = clientSocket.recvfrom(2048)
 
-        while(ack != b'00000000' and ack != b'11111111'):
-            # ack corrupted, resend packet      
-            clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
-            ack, receiver_addr = clientSocket.recvfrom(2048)
+                while(ack == b'11111111'):
+                    # Resend data
+                    clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), receiver_addr)
+                    ack, receiver_addr = clientSocket.recvfrom(2048)
 
-        while(ack == b'11111111'):
-            # Resend data
-            clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
-            ack, receiver_addr = clientSocket.recvfrom(2048)
+                if(ack == b'00000000'):
+                    # Positive ack, continue sending next packet
+                    break
+            except:
+                # Timeout. Resend packets
+                print("Timeout, Resending packet")
+                clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
+
+        #ack = CorruptSenderACK(ack) WHY?
 
         seq_num += 1
-        progressbar['value'] += 1.5873
-        if (seq_num == 63):
-            endTime = time.time()
-            print(endTime - start_time)
-            uploadLabel = Label(root,text='Upload complete!',font="Verdana")
-            uploadLabel.pack()
+        # progressbar['value'] += 1.5873
+        # if (seq_num == 63):
+        #     endTime = time.time()
+        #     print(endTime - start_time)
+        #     uploadLabel = Label(root,text='Upload complete!',font="Verdana")
+        #     uploadLabel.pack()
 
 # configure server and port name
 serverName = gethostname()
@@ -128,6 +134,7 @@ addr = (serverName, serverPort)
 # creates UDP socket for server
 clientSocket = socket(AF_INET, SOCK_DGRAM)
 clientSocket.bind(addr)
+clientSocket.settimeout(0.0015)      # Timeout; Can be modified
 
 root.mainloop()
-clientSocket.close()        #close the socket
+clientSocket.close()            #close the socket

@@ -1,6 +1,6 @@
 # Author: Renin Kingsly Jose
 # EECE.4830 Network Design
-# Phase 3
+# Phase 4
 
 # Receiver.py
 
@@ -13,13 +13,14 @@ import struct
 # for command line arg
 import sys
 
+# WRITE FUNCTION FOR PACKET LOSS HERE
+
 def CorruptRawData(packet, percentage):
 
     try:
         # enter if packet is randomly selected to be corrupted
         if (random.random() < percentage):
             print("Raw data corrupted")
-            print(type(packet))
             packetString = str(packet)
             packetList = list(packetString)
 
@@ -35,7 +36,6 @@ def CorruptRawData(packet, percentage):
             packetList[:2] = '\\xff\\xd8'
             corruptedPacket = ''.join(packetList)
             corruptedPacket = bytes(corruptedPacket.encode())
-            print(type(corruptedPacket))
             return corruptedPacket
         else:
             # no changes: don't corrupt packet
@@ -86,38 +86,21 @@ option = int(sys.argv[1])
 percentage = int(sys.argv[2]) / 100
 
 image = []
-buffer = []
+buffer = -1         # Setting a non-zero sq_num for buffer
 
 # Read data
 while True:
     try:
+        duplicate = False                                                       # Boolean to set duplicate
         incoming_packet, sender_addr = r_socket.recvfrom(buffer_size)           #incoming_packet = (chksum, sq_num, raw_data)
         chksum, sq_num, raw_data = struct.unpack("II1024s", incoming_packet)
-        print(sq_num)
-        
+        print("Packet: ", sq_num)
 
+        if(buffer == sq_num):
+            # Duplicate
+            print("Duplicate packet detected")
 
-        if(option == 3):
-            # Data packet bit corruption
-            raw_data = CorruptRawData(raw_data, percentage)
-        
-        # raw_data corruption identifier
-        print(chksum) 
-        print(binary_simple_checksum(raw_data))
-
-        if(chksum != binary_simple_checksum(raw_data)):
-            # Send a n-ack to sender
-            print("Negative ack: Bit error detected")
-
-            if(option == 2):
-                ack = CorruptACK(b'11111111', percentage)
-            else:
-                ack = b'11111111'
-
-            r_socket.sendto(ack, sender_addr)
-            #r_socket.sendto(ack, sq_num, sender_addr)
-        else:
-            # Send an ack to sender
+            # Send positive ack
             print("Positive ack")
 
             if(option == 2):
@@ -125,9 +108,45 @@ while True:
             else:
                 ack = b'00000000'
 
-            r_socket.sendto(ack, sender_addr)
-            #r_socket.sendto(ack, sq_num, sender_addr)
-            image.append(raw_data)
+            r_socket.sendto(ack, sender_addr)         
+            duplicate = True
+
+        # Perform this operation only 
+        if(duplicate == False):
+            if(option == 3):
+                # Data packet bit corruption
+                raw_data = CorruptRawData(raw_data, percentage)
+            
+            if(option == 5):
+                # CALL PACKET LOSS FUNCTION HERE
+                raw_data = IDK_MAN_WHATEVER_YOU_NAME_IT(raw_data, percentage)
+
+            # raw_data corruption identifier
+            print(chksum) 
+            print(binary_simple_checksum(raw_data))
+
+            if(chksum != binary_simple_checksum(raw_data)):
+                # Send a n-ack to sender
+                print("Negative ack: Packet error detected")
+
+                if(option == 2):
+                    ack = CorruptACK(b'11111111', percentage)
+                else:
+                    ack = b'11111111'
+
+                r_socket.sendto(ack, sender_addr) 
+            else:
+                # Send an ack to sender
+                print("Positive ack")
+
+                if(option == 2):
+                    ack = CorruptACK(b'00000000', percentage)
+                else:
+                    ack = b'00000000'
+
+                r_socket.sendto(ack, sender_addr)
+                buffer = sq_num
+                image.append(raw_data)
 
     except Exception as e:
         print(e.args)
