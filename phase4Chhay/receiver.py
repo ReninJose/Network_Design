@@ -119,7 +119,11 @@ while True:
             
             if(option == 5):
                 # CALL PACKET LOSS FUNCTION HERE
-                raw_data = IDK_MAN_WHATEVER_YOU_NAME_IT(raw_data, percentage)
+                #raw_data = IDK_MAN_WHATEVER_YOU_NAME_IT(raw_data, percentage)
+                # depending on given percentage
+                if (random.random() < percentage):
+                    # randomly drop packet based on percentage and send nack
+                    ack = b'11111111'
 
             # raw_data corruption identifier
             print(chksum) 
