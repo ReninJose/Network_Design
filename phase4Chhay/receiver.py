@@ -9,6 +9,7 @@ from queue import Empty
 import random
 import socket
 import struct
+from time import sleep
 
 # for command line arg
 import sys
@@ -61,6 +62,18 @@ def CorruptACK(packet, percentage):
     except Exception as e:
         print("ACK corrupt throwing")
         print(e)
+
+def DropACKPacket(percent):
+    # randomly, depending on user inputted percentage
+    if (random.random() < percent):
+        # drop the ACK packet, prompting resend
+        sleep(0.015)
+
+def DropDataPacket(percent):
+    # randomly, depending on user inputted percentage)
+    if (random.random() < percent):
+        # drop the data packet, prompting resend
+        sleep(0.015)
 
 def binary_simple_checksum(data):
 
@@ -117,13 +130,12 @@ while True:
                 # Data packet bit corruption
                 raw_data = CorruptRawData(raw_data, percentage)
             
+            if(option == 4):
+                # Simulate sender ACK packet drop
+                ack = DropACKPacket(percentage)
             if(option == 5):
                 # CALL PACKET LOSS FUNCTION HERE
-                #raw_data = IDK_MAN_WHATEVER_YOU_NAME_IT(raw_data, percentage)
-                # depending on given percentage
-                if (random.random() < percentage):
-                    # randomly drop packet based on percentage and send nack
-                    ack = b'11111111'
+                DropDataPacket(percentage)         
 
             # raw_data corruption identifier
             print(chksum) 

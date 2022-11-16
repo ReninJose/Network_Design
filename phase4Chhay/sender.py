@@ -20,9 +20,9 @@ import sys
 import random
 
 # option4 is a boolean: only pass 1 if you want to test option4, elsewise set to 0
-option4 = int(sys.argv[1])
+#option4 = int(sys.argv[1])
 # random percentage given by the user: dictates how many packets get dropped when option4 == True
-percentage = int(sys.argv[2]) / 100
+#percentage = int(sys.argv[2]) / 100
 
 # Configure base gui characteristics: window title, size, label
 root = Tk()
@@ -101,11 +101,6 @@ def MakePayloads():
         while(True):
             try:
                 ack, receiver_addr = clientSocket.recvfrom(2048)
-                # only give chance to drop packets if option 4 is enabled
-                if option4:
-                    # depending on percentage, manually drop packet
-                    if (random.random() < percentage):
-                        raise Exception('manual timeout')
                 while(ack != b'00000000' and ack != b'11111111'):
                     # ack corrupted, resend packet      
                     clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), receiver_addr)
