@@ -132,7 +132,7 @@ while True:
             
             if(option == 4):
                 # Simulate sender ACK packet drop
-                DropACKPacket(percentage)
+                ack = DropACKPacket(percentage)
             if(option == 5):
                 # CALL PACKET LOSS FUNCTION HERE
                 DropDataPacket(percentage)         

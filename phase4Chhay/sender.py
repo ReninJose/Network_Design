@@ -19,11 +19,6 @@ from tkinter import ttk
 import sys
 import random
 
-# option4 is a boolean: only pass 1 if you want to test option4, elsewise set to 0
-#option4 = int(sys.argv[1])
-# random percentage given by the user: dictates how many packets get dropped when option4 == True
-#percentage = int(sys.argv[2]) / 100
-
 # Configure base gui characteristics: window title, size, label
 root = Tk()
 root.title('Project Phase 4')
@@ -36,23 +31,6 @@ uploadButton.pack()
 
 progressbar = ttk.Progressbar(root, orient='horizontal', mode='determinate', length=100)
 progressbar.pack()
-
-# def CorruptSenderACK(packet):
-#     try:
-#         # corrupt ack at selected frequency
-#         if (random.random() < percentage):
-#             print(random.random())
-#             print("Ack corrupted")
-#             packet = ''.join('1' if x == '0' else '0' for x in packet)
-#             packet = bytes(packet.encode())
-#             print(type(packet))
-#             return packet
-#         else:
-#             print(type(packet))
-#             return packet
-#     except Exception as e:
-#         print("ACK corrupt throwing")
-#         print(e)
 
 def MakePkt(seqNum, data, check):
 
@@ -119,15 +97,13 @@ def MakePayloads():
                 print("Timeout, Resending packet")
                 clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
 
-        #ack = CorruptSenderACK(ack) WHY?
-
         seq_num += 1
-        # progressbar['value'] += 1.5873
-        # if (seq_num == 63):
-        #     endTime = time.time()
-        #     print(endTime - start_time)
-        #     uploadLabel = Label(root,text='Upload complete!',font="Verdana")
-        #     uploadLabel.pack()
+        progressbar['value'] += 1.5873
+        if (seq_num == 63):
+             endTime = time.time()
+             #print(endTime - start_time)
+             uploadLabel = Label(root,text='Upload complete!',font="Verdana")
+             uploadLabel.pack()
 
 # configure server and port name
 serverName = gethostname()
