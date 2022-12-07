@@ -91,21 +91,19 @@ r_socket.settimeout(10)                                                         
 
 option = int(sys.argv[1])
 percentage = int(sys.argv[2]) / 100
-winSize = 10 #int(sys.argv[3])
+#winSize = 10 #int(sys.argv[3])
 
 image = []
 buffer = -1         # Setting a non-zero sq_num for buffer
 
-gbnBuffer = []  # Create packet window queue
+#gbnBuffer = []  # Create packet window queue
 
 # Read data
 while True:
     try:
         duplicate = False                                                       # Boolean to set duplicate
         incoming_packet, sender_addr = r_socket.recvfrom(buffer_size)           #incoming_packet = (chksum, sq_num, raw_data)
-        if (len(gbnBuffer) < winSize):
-            gbnBuffer.append(incoming_packet)   # Add packet from sender to GBN buffer
-        chksum, sq_num, raw_data = struct.unpack("II1024s", gbnBuffer[0]) # FIX THIS: PACKETS NEED TO BE PROCESSED CONCURRENTLY NOT GIVING PRIORITY TO FIRST LIST ELEMENT
+        chksum, sq_num, raw_data = struct.unpack("II1024s", incoming_packet) # FIX THIS: PACKETS NEED TO BE PROCESSED CONCURRENTLY NOT GIVING PRIORITY TO FIRST LIST ELEMENT
         print("Packet: ", sq_num)
 
         if(buffer == sq_num):
@@ -158,7 +156,7 @@ while True:
                     ack = CorruptACK(b'00000000', percentage)
                 else:
                     ack = b'00000000'
-                gbnBuffer.pop(0)    # As an ACK is sent, remove the ACK'd packet and make space for another in the buffer
+                #gbnBuffer.pop(0)    # As an ACK is sent, remove the ACK'd packet and make space for another in the buffer
                 r_socket.sendto(ack, sender_addr)
                 buffer = sq_num
                 image.append(raw_data)

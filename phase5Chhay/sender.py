@@ -1,6 +1,6 @@
 #Author @ Keegan Chhay (file send / socket functionality), Ryan White (gui support)
 #EECE Network Design: Protocols and apps
-#Phase 4: Implement RDT 3.0 over a unreliable UDP channel with bit-errors and loss
+#Phase 5: Implement GBN over a reliable UDP channel with bit-errors and loss
 #========================================================================#
 # ALL PRINT STATEMENTS ARE COMMENTED OUT, IT IS USED TO HELP CHECK OUTPUT
 #========================================================================#
@@ -16,13 +16,16 @@ from time import struct_time
 from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
-import sys
-import random
+import traceback
+
+winSize = 10 #int(sys.argv[1])
+dividedPackets = [] # hold the segmented data from the packet division
+gbnBuffer = [] # sliding window to send packets to the receiver
 
 # Configure base gui characteristics: window title, size, label
 root = Tk()
-root.title('Project Phase 4')
-titleLabel = Label(root, text = "Network Design Phase 4", font="Verdana")
+root.title('Project Phase 5')
+titleLabel = Label(root, text = "Network Design Phase 5", font="Verdana")
 titleLabel.pack()
 
 # Create button to allow user to upload any bmp file given a path
@@ -56,7 +59,8 @@ def MakePayloads():
     # Get textiowrapper of path and extract name for the path to the filename
     directPath = filedialog.askopenfile(mode='r', filetypes=[('Image Files', '*jpg')])
     filename = directPath.name
-    seq_num = 0
+    # declare initial sequence number and base pointer
+    seq_num = 0; base = 0; nextSeqNum = 0
 
     start_time = time.time()
     print(start_time)
@@ -74,30 +78,48 @@ def MakePayloads():
         starting_index = x * 1024
         stop_index = starting_index + 1024
         packet_slice = (image_bytes[starting_index:stop_index])
-        clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
-        
-        while(True):
-            try:
+        dividedPackets.append(packet_slice)
+        #if (len(gbnBuffer) < winSize):
+        #    gbnBuffer.append(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)))
+        #    seq_num += 1
+        #clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
+    
+
+    while(True):
+        try:
+            if (len(gbnBuffer) < winSize):
+                if (nextSeqNum < base + winSize):
+                    gbnBuffer.append(MakePkt(nextSeqNum, dividedPackets[nextSeqNum], binary_simple_checksum(dividedPackets[nextSeqNum])))
+                    nextSeqNum += 1
+                    clientSocket.sendto(gbnBuffer[len(gbnBuffer)-1], (serverName, 12005))
+            
+            ack, receiver_addr = clientSocket.recvfrom(2048)
+            while(ack != b'00000000' and ack != b'11111111'):
+                # ack corrupted, resend packet      
+                clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), receiver_addr)
                 ack, receiver_addr = clientSocket.recvfrom(2048)
-                while(ack != b'00000000' and ack != b'11111111'):
-                    # ack corrupted, resend packet      
-                    clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), receiver_addr)
-                    ack, receiver_addr = clientSocket.recvfrom(2048)
 
-                while(ack == b'11111111'):
-                    # Resend data
-                    clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), receiver_addr)
-                    ack, receiver_addr = clientSocket.recvfrom(2048)
+            while(ack == b'11111111'):
+                # Resend data
+                clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), receiver_addr)
+                ack, receiver_addr = clientSocket.recvfrom(2048)
 
-                if(ack == b'00000000'):
-                    # Positive ack, continue sending next packet
-                    break
-            except:
-                # Timeout. Resend packets
-                print("Timeout, Resending packet")
-                clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
+            if(ack == b'00000000'):
+                # Positive ack, continue sending next packet
+                # Shift the base pointer, pop earliest packet
+                base += 1
+                gbnBuffer.pop(0)
+                continue
+                #break
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+            break
+            # Timeout. Resend packets
+            #print("Timeout, Resending packet")
+            #clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
 
-        seq_num += 1
+        #seq_num += 1
         progressbar['value'] += 1.5873
         if (seq_num == 63):
              endTime = time.time()
@@ -113,7 +135,7 @@ addr = (serverName, serverPort)
 # creates UDP socket for server
 clientSocket = socket(AF_INET, SOCK_DGRAM)
 clientSocket.bind(addr)
-clientSocket.settimeout(0.0015)      # Timeout; Can be modified
+#clientSocket.settimeout(0.0015)      # Timeout; Can be modified
 
 root.mainloop()
 clientSocket.close()            #close the socket
