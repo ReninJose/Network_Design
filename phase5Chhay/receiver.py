@@ -14,6 +14,7 @@ from time import sleep
 # for command line arg
 import sys
 
+deliveredPacketNums = []
 
 def CorruptRawData(packet, percentage):
 
@@ -61,13 +62,13 @@ def DropACKPacket(percent):
     # randomly, depending on user inputted percentage
     if (random.random() < percent):
         # drop the ACK packet, prompting resend
-        sleep(0.015)
+        sleep(0.0015)
 
 def DropDataPacket(percent):
     # randomly, depending on user inputted percentage)
     if (random.random() < percent):
         # drop the data packet, prompting resend
-        sleep(0.015)
+        sleep(0.0015)
 
 def binary_simple_checksum(data):
 
@@ -96,15 +97,17 @@ percentage = int(sys.argv[2]) / 100
 image = []
 buffer = -1         # Setting a non-zero sq_num for buffer
 
-#gbnBuffer = []  # Create packet window queue
-
 # Read data
 while True:
     try:
         duplicate = False                                                       # Boolean to set duplicate
         incoming_packet, sender_addr = r_socket.recvfrom(buffer_size)           #incoming_packet = (chksum, sq_num, raw_data)
-        chksum, sq_num, raw_data = struct.unpack("II1024s", incoming_packet) # FIX THIS: PACKETS NEED TO BE PROCESSED CONCURRENTLY NOT GIVING PRIORITY TO FIRST LIST ELEMENT
+        chksum, sq_num, raw_data = struct.unpack("II1024s", incoming_packet)
         print("Packet: ", sq_num)
+
+        #if (sq_num < buffer):
+            # Incorrect packet: skip over it and check for the next in-order packet
+        #    continue
 
         if(buffer == sq_num):
             # Duplicate
@@ -148,6 +151,9 @@ while True:
                     ack = b'11111111'
 
                 r_socket.sendto(ack, sender_addr) 
+            #if (sq_num != buffer+1):
+                # Out of order packet: discard packet and prompt resend
+            #    pass
             else:
                 # Send an ack to sender
                 print("Positive ack")
@@ -156,10 +162,15 @@ while True:
                     ack = CorruptACK(b'00000000', percentage)
                 else:
                     ack = b'00000000'
-                #gbnBuffer.pop(0)    # As an ACK is sent, remove the ACK'd packet and make space for another in the buffer
                 r_socket.sendto(ack, sender_addr)
+                #buffer = sq_num
+
+                #deliveredPacketNums.append(sq_num)
+                print(deliveredPacketNums)
+                if (not(sq_num in deliveredPacketNums)):
+                    image.append(raw_data)
+                    deliveredPacketNums.append(sq_num)
                 buffer = sq_num
-                image.append(raw_data)
 
     except Exception as e:
         print(e.args)

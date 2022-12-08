@@ -18,7 +18,7 @@ from tkinter import filedialog
 from tkinter import ttk
 import traceback
 
-winSize = 10 #int(sys.argv[1])
+winSize = 3 #int(sys.argv[1])
 dividedPackets = [] # hold the segmented data from the packet division
 gbnBuffer = [] # sliding window to send packets to the receiver
 
@@ -79,30 +79,33 @@ def MakePayloads():
         stop_index = starting_index + 1024
         packet_slice = (image_bytes[starting_index:stop_index])
         dividedPackets.append(packet_slice)
-        #if (len(gbnBuffer) < winSize):
-        #    gbnBuffer.append(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)))
-        #    seq_num += 1
-        #clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
     
-
     while(True):
         try:
-            if (len(gbnBuffer) < winSize):
-                if (nextSeqNum < base + winSize):
-                    gbnBuffer.append(MakePkt(nextSeqNum, dividedPackets[nextSeqNum], binary_simple_checksum(dividedPackets[nextSeqNum])))
-                    nextSeqNum += 1
-                    clientSocket.sendto(gbnBuffer[len(gbnBuffer)-1], (serverName, 12005))
+            while (nextSeqNum < base + winSize):
+                print("sending ", nextSeqNum)
+                gbnBuffer.append(MakePkt(nextSeqNum, dividedPackets[nextSeqNum], binary_simple_checksum(dividedPackets[nextSeqNum])))
+                nextSeqNum += 1
+                clientSocket.sendto(gbnBuffer[len(gbnBuffer)-1], (serverName, 12005))
             
             ack, receiver_addr = clientSocket.recvfrom(2048)
-            while(ack != b'00000000' and ack != b'11111111'):
-                # ack corrupted, resend packet      
-                clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), receiver_addr)
-                ack, receiver_addr = clientSocket.recvfrom(2048)
+            if(ack != b'00000000' and ack != b'11111111'):
+                # Ack corrupted: therefore, resend all N packets in the window
+                print("ACK CORRUPTED")
+                nextSeqNum = base
+                for i in range(len(gbnBuffer)):
+                    clientSocket.sendto(gbnBuffer[i], receiver_addr)
+                    nextSeqNum += 1
 
-            while(ack == b'11111111'):
+            if(ack == b'11111111'):
                 # Resend data
-                clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), receiver_addr)
-                ack, receiver_addr = clientSocket.recvfrom(2048)
+                # Negative acknowledgement received: therefore, resend all N packets in the window
+                print("ENTER NACK, BASE AND SEQNUM: ", base, seq_num)
+                nextSeqNum = base
+                for i in range(len(gbnBuffer)):
+                    print("IN NACK, SEND ", nextSeqNum)
+                    clientSocket.sendto(gbnBuffer[i], receiver_addr)
+                    nextSeqNum += 1
 
             if(ack == b'00000000'):
                 # Positive ack, continue sending next packet
@@ -110,14 +113,18 @@ def MakePayloads():
                 base += 1
                 gbnBuffer.pop(0)
                 continue
-                #break
+
+        except TimeoutError as e:
+            #Timeout. Resend all N packets in window
+            print("Timeout, Resending window")
+            nextSeqNum = base
+        except IndexError:
+            print("Sending complete!")
+            break
         except Exception as e:
             print(e)
             print(traceback.format_exc())
             break
-            # Timeout. Resend packets
-            #print("Timeout, Resending packet")
-            #clientSocket.sendto(MakePkt(seq_num, packet_slice, binary_simple_checksum(packet_slice)), (serverName, 12005))
 
         #seq_num += 1
         progressbar['value'] += 1.5873
@@ -135,7 +142,7 @@ addr = (serverName, serverPort)
 # creates UDP socket for server
 clientSocket = socket(AF_INET, SOCK_DGRAM)
 clientSocket.bind(addr)
-#clientSocket.settimeout(0.0015)      # Timeout; Can be modified
+clientSocket.settimeout(0.0015)      # Timeout; Can be modified
 
 root.mainloop()
 clientSocket.close()            #close the socket
