@@ -11,6 +11,7 @@ from socket import *
 import struct
 import time
 from time import struct_time
+import sys
 
 # import gui module and file browsing library
 from tkinter import *
@@ -18,7 +19,7 @@ from tkinter import filedialog
 from tkinter import ttk
 import traceback
 
-winSize = 3 #int(sys.argv[1])
+winSize = int(sys.argv[1])
 dividedPackets = [] # hold the segmented data from the packet division
 gbnBuffer = [] # sliding window to send packets to the receiver
 
