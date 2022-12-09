@@ -104,6 +104,7 @@ while True:
         incoming_packet, sender_addr = r_socket.recvfrom(buffer_size)           #incoming_packet = (chksum, sq_num, raw_data)
         chksum, sq_num, raw_data = struct.unpack("II1024s", incoming_packet)
         print("Packet: ", sq_num)
+        print("Buffer: ", buffer)
 
         #if (sq_num < buffer):
             # Incorrect packet: skip over it and check for the next in-order packet
@@ -163,14 +164,14 @@ while True:
                 else:
                     ack = b'00000000'
                 r_socket.sendto(ack, sender_addr)
-                #buffer = sq_num
+                buffer = sq_num
 
                 #deliveredPacketNums.append(sq_num)
                 print(deliveredPacketNums)
                 if (not(sq_num in deliveredPacketNums)):
                     image.append(raw_data)
                     deliveredPacketNums.append(sq_num)
-                buffer = sq_num
+                #buffer = sq_num
 
     except Exception as e:
         print(e.args)

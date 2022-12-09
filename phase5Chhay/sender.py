@@ -18,7 +18,7 @@ from tkinter import filedialog
 from tkinter import ttk
 import traceback
 
-winSize = 3 #int(sys.argv[1])
+winSize = 10 #int(sys.argv[1])
 dividedPackets = [] # hold the segmented data from the packet division
 gbnBuffer = [] # sliding window to send packets to the receiver
 
@@ -87,25 +87,29 @@ def MakePayloads():
                 gbnBuffer.append(MakePkt(nextSeqNum, dividedPackets[nextSeqNum], binary_simple_checksum(dividedPackets[nextSeqNum])))
                 nextSeqNum += 1
                 clientSocket.sendto(gbnBuffer[len(gbnBuffer)-1], (serverName, 12005))
+
+                progressbar['value'] += 1.5873
+                if (nextSeqNum == 63):
+                    endTime = time.time()
+                    #print(endTime - start_time)
+                    uploadLabel = Label(root,text='All packets sent!',font="Verdana")
+                    uploadLabel.pack()
             
             ack, receiver_addr = clientSocket.recvfrom(2048)
             if(ack != b'00000000' and ack != b'11111111'):
                 # Ack corrupted: therefore, resend all N packets in the window
                 print("ACK CORRUPTED")
                 nextSeqNum = base
-                for i in range(len(gbnBuffer)):
-                    clientSocket.sendto(gbnBuffer[i], receiver_addr)
-                    nextSeqNum += 1
+                #while (len(gbnBuffer) > 0):
+                #    gbnBuffer.pop(0)
 
             if(ack == b'11111111'):
                 # Resend data
                 # Negative acknowledgement received: therefore, resend all N packets in the window
                 print("ENTER NACK, BASE AND SEQNUM: ", base, seq_num)
                 nextSeqNum = base
-                for i in range(len(gbnBuffer)):
-                    print("IN NACK, SEND ", nextSeqNum)
-                    clientSocket.sendto(gbnBuffer[i], receiver_addr)
-                    nextSeqNum += 1
+                #while (len(gbnBuffer) > 0):
+                #    gbnBuffer.pop(0)
 
             if(ack == b'00000000'):
                 # Positive ack, continue sending next packet
@@ -125,14 +129,6 @@ def MakePayloads():
             print(e)
             print(traceback.format_exc())
             break
-
-        #seq_num += 1
-        progressbar['value'] += 1.5873
-        if (seq_num == 63):
-             endTime = time.time()
-             #print(endTime - start_time)
-             uploadLabel = Label(root,text='Upload complete!',font="Verdana")
-             uploadLabel.pack()
 
 # configure server and port name
 serverName = gethostname()
